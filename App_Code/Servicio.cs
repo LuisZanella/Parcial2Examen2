@@ -127,5 +127,61 @@ public class Servicio : System.Web.Services.WebService
             _dtr = null;
         }
     }
+    [WebMethod(EnableSession = true)]
+    public long registrarAlumno(Alumno persona)
+    {
+        SqlConexion _conexion = new SqlConexion();
+        List<SqlParameter> _Parametros = new List<SqlParameter>();
+        DataTableReader _dtr = null;
+
+        try
+        {
+            //Se abre conexion
+            _conexion.Conectar(System.Configuration.ConfigurationManager.ConnectionStrings["MiBD"].ToString());
+
+            //Se agregan´parametros a la lista List<SqlParameters>, con los valores para cada parametro
+            _Parametros.Add(new SqlParameter("@_Materia", persona.Materia));
+            _Parametros.Add(new SqlParameter("@_Grupo", persona.Grupo));
+            _Parametros.Add(new SqlParameter("@_Semestre", persona.Semestre));
+            _Parametros.Add(new SqlParameter("@_Computadora", persona.Computadora));
+            _conexion.PrepararProcedimiento("sp_InAlumno", _Parametros);
+
+            _dtr = _conexion.EjecutarTableReader();
+            if (_dtr.HasRows)
+            {
+                //Leer la informacion
+                _dtr.Read();
+                //Se crea un objeto de clase usuario
+                Alumno _user = new Alumno()
+                {
+                    Id_Alumno = int.Parse(_dtr["Id_Alumno"].ToString())
+                };
+
+                //Se indica que se cierre la tabla
+                _dtr.Close();
+
+                //Creamos session con el id del usuario
+
+                HttpContext.Current.Session["Identificador"] = _user.Id_Alumno;
+                return _user.Id_Alumno;
+
+            }
+            else
+            {
+                throw new Exception("User not found");
+            }
+
+        }
+        catch (Exception ex)
+        {
+            throw new Exception(ex.Message);
+        }
+        finally
+        {
+            _conexion.Desconectar();
+            _conexion = null;
+            _dtr = null;
+        }
+    }
 
 }
